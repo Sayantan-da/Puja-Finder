@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+backend/pujafinder.db
+*.sqlite3
+
+# Node
+node_modules/
+frontend/dist/
+
+# User uploads (keep the bundled demo photos)
+backend/uploads/*
+!backend/uploads/seed/
+
+# Env & IDE
+**/.env
+**/.env.*
+!.env.example
+.vscode/
+.idea/

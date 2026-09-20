@@ -1,0 +1,56 @@
+# Run the whole stack with one command:
+#   docker compose up --build
+# → http://localhost:8000  (API + docs + frontend on PostgreSQL)
+#
+# Migrations run automatically on container start (alembic upgrade head).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pujafinder
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pujafinder"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/pujafinder
+      SECRET_KEY: change-me-to-a-long-random-string
+      CROWD_SIMULATOR: "off"
+      DB_POOL_SIZE: 10
+      DB_MAX_OVERFLOW: 20
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - pf_uploads:/app/backend/uploads/pandal_images
+
+  # Optional one-shot backup you can also run ad-hoc:
+  #   docker compose run --rm backup
+  backup:
+    image: postgres:16-alpine
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/pujafinder
+      BACKUP_DIR: /backups
+    volumes:
+      - ./backups:/backups
+    entrypoint: >
+      sh -c "pg_dump --format=custom --file /backups/pujafinder_$$(date +%Y%m%d_%H%M%S).dump $$DATABASE_URL
+      && find /backups -name 'pujafinder_*.dump' -mtime +7 -delete && ls -lh /backups"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  pf_uploads:

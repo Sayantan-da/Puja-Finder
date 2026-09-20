@@ -1,0 +1,34 @@
+# Nightly automated backup of the production PostgreSQL database.
+#
+# Requires one secret in the GitHub repo (Settings → Secrets → Actions):
+#   DATABASE_URL — the PostgreSQL connection string (e.g. from Neon)
+#
+# The dump is stored as a workflow artifact for 30 days.
+# For longer retention, replace the upload step with an S3/Backblaze upload.
+name: nightly-db-backup
+
+on:
+  schedule:
+    - cron: "17 21 * * *" # 21:17 UTC ≈ 02:47 IST
+  workflow_dispatch: {} # allow manual runs
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install pg client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          pg_dump --format=custom --file "pujafinder_$(date +%Y%m%d_%H%M%S).dump" "$DATABASE_URL"
+          ls -lh ./*.dump
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup
+          path: ./*.dump
+          retention-days: 30

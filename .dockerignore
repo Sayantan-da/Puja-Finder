@@ -1,0 +1,12 @@
+**/__pycache__
+**/*.pyc
+backend/pujafinder.db
+backend/uploads/pandal_images
+frontend/node_modules
+frontend/dist
+.git
+**/.env
+**/.env.*
+!.env.example
+*.md
+!README.md

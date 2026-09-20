@@ -1,0 +1,23 @@
+# Render.com Blueprint — deploy PujaFinder in one click:
+# GitHub repo → Render → New → Blueprint → Apply.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: pujafinder
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # paste your Neon pooled PostgreSQL URL in the dashboard
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production    # disables demo accounts (Admin@123 etc.)
+      - key: ADMIN_EMAIL
+        sync: false          # your email — an ADMIN account is created on first boot
+      - key: ADMIN_PASSWORD
+        sync: false          # strong password for the account above (remove later if you like)
+      - key: CROWD_SIMULATOR
+        value: off

@@ -1,0 +1,21 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+sqlalchemy>=2.0
+pydantic>=2.7
+pydantic-settings>=2.3
+email-validator>=2.1
+bcrypt>=4.0
+python-jose[cryptography]>=3.3
+python-multipart>=0.0.9
+tzdata>=2024.1
+pillow>=10.0
+sentry-sdk[fastapi]>=2.0
+alembic>=1.13
+pyotp>=2.9.0
+firebase-admin>=6.5.0
+# --- Optional: only needed if you switch DATABASE_URL to PostgreSQL ---
+psycopg2-binary>=2.9
+
+# --- Distributed scaling (optional): Redis for cache, rate limits, Pub/Sub ---
+redis>=5.0.0
+
