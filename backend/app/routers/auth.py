@@ -464,12 +464,14 @@ async def forgot_password(
 ):
     """Initiate a password reset flow. Sends an email with a secure token link if the account exists."""
     client_ip = get_client_ip(request)
+    ip_key = f"auth:reset:ip:{client_ip}"
 
     # 1. Rate Limiting Check
-    if auth_limiter.is_locked(client_ip):
+    is_ip_blocked, ip_retry_after = await auth_limiter.is_blocked(ip_key)
+    if is_ip_blocked:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many password reset requests. Please try again in 15 minutes.",
+            detail=f"Too many password reset requests. Please try again in {ip_retry_after} seconds.",
         )
 
     # 2. CAPTCHA Verification (if enabled)
@@ -485,7 +487,7 @@ async def forgot_password(
         token = create_password_reset_token(user.email)
         background_tasks.add_task(send_password_reset_email, user.email, token, user.name)
 
-    auth_limiter.record_failure(client_ip)  # Mild rate-limiting counter
+    await auth_limiter.record_failure(ip_key)
 
     # Always return a generic success message to prevent user enumeration
     return {
