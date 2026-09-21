@@ -36,30 +36,90 @@ export interface GroupDestination {
   latitude: number
   longitude: number
   address: string
-  setBy: string
-  setAt: string
+  theme?: string | null
+  crowdLevel?: string | null
+  setBy?: string
+  setAt?: string
+}
+
+export interface TripCheckpoint {
+  id: string
+  name: string
+  latitude?: number | null
+  longitude?: number | null
+  scheduledTime?: string | null
+  pandalId?: string | null
+  isCompleted: boolean
+  createdAt?: string
+}
+
+export interface TripMessage {
+  id: string
+  userId: string
+  userName: string
+  message: string
+  emoji?: string | null
+  createdAt: string
+}
+
+export interface TripAlert {
+  id: string
+  type: 'IM_LOST' | 'MEET_HERE' | 'CROWD_RUSH' | 'ARRIVAL'
+  userId: string
+  userName: string
+  coords?: { latitude: number; longitude: number } | null
+  data?: any
+  createdAt: string
+}
+
+export interface MeetHerePin {
+  latitude: number
+  longitude: number
+  title?: string
+  description?: string
+  setBy?: string
+  setAt?: string
 }
 
 export interface GroupMember {
+  userId?: string
   name: string
   avatarUrl: string
+  role?: 'HOST' | 'CO_HOST' | 'MEMBER'
+  sharingLocation?: boolean
   latitude: number | null
   longitude: number | null
+  accuracy?: number | null
   heading: number
   speed: number
+  status?: 'MOVING' | 'STALLED' | 'ARRIVED' | 'ON_BREAK' | 'LEAVING' | 'OFFLINE' | 'LOCATION_OFF'
   lastUpdated: string | null
-  isOnline: boolean
-  etaMinutes: number
+  isOnline?: boolean
+  etaMinutes?: number
+  distanceToDestination?: number | null
+  joinedAt?: string
 }
 
 export interface GroupTripState {
   groupId: string
   groupName: string
   joinCode: string
+  inviteToken?: string | null
   createdBy: string
-  createdAt: string
+  status?: 'UPCOMING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
+  startsAt?: string | null
+  endsAt?: string | null
+  maxMembers?: number
+  isPrivate?: boolean
   destination: GroupDestination
+  routePandals?: GroupDestination[]
+  checkpoints?: TripCheckpoint[]
+  meetHerePin?: MeetHerePin | null
   members: Record<string, GroupMember>
+  messages?: TripMessage[]
+  alerts?: TripAlert[]
+  createdAt: string
+  updatedAt?: string
 }
 
 export interface Pandal {

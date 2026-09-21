@@ -155,6 +155,51 @@ def _ensure_pandal_columns():
         pass
 
 
+def _ensure_group_trip_columns():
+    """Ensure group_trip columns exist in SQLite and PostgreSQL."""
+    try:
+        with engine.begin() as conn:
+            if IS_SQLITE:
+                cols = conn.exec_driver_sql("PRAGMA table_info(group_trips)").fetchall()
+                present = {row[1] for row in cols}
+                if "invite_token" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN invite_token VARCHAR(64)")
+                if "status" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN status VARCHAR(20) DEFAULT 'ACTIVE'")
+                if "starts_at" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN starts_at DATETIME")
+                if "ends_at" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN ends_at DATETIME")
+                if "max_members" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN max_members INTEGER DEFAULT 10")
+                if "is_private" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN is_private BOOLEAN DEFAULT 1")
+                if "route_pandals" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN route_pandals JSON")
+                if "checkpoints" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN checkpoints JSON")
+                if "meet_here_pin" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN meet_here_pin JSON")
+                if "messages" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN messages JSON")
+                if "alerts" not in present:
+                    conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN alerts JSON")
+            else:
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS invite_token VARCHAR(64)")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'ACTIVE'")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS starts_at TIMESTAMP")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS ends_at TIMESTAMP")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS max_members INTEGER DEFAULT 10")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT TRUE")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS route_pandals JSONB DEFAULT '[]'::jsonb")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS checkpoints JSONB DEFAULT '[]'::jsonb")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS meet_here_pin JSONB")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS messages JSONB DEFAULT '[]'::jsonb")
+                conn.exec_driver_sql("ALTER TABLE group_trips ADD COLUMN IF NOT EXISTS alerts JSONB DEFAULT '[]'::jsonb")
+    except Exception:
+        pass
+
+
 def get_db():
     """FastAPI dependency that yields a database session."""
     db = SessionLocal()
@@ -177,4 +222,5 @@ def init_db():
     _ensure_crowd_report_columns()
     _ensure_user_security_columns()
     _ensure_pandal_columns()
+    _ensure_group_trip_columns()
 
