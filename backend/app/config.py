@@ -68,6 +68,19 @@ class Settings(BaseSettings):
     # Anti-spam cooldown: minutes between successive crowd reports by the same user for the same pandal
     crowd_report_cooldown_minutes: int = 10
 
+    # Email / SMTP Configuration
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_from_name: str = "PujaFinder"
+    smtp_tls: bool = True
+
+    # Frontend URL for generating password reset links
+    frontend_url: str = "http://localhost:5173"
+    password_reset_token_expire_minutes: int = 15
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",

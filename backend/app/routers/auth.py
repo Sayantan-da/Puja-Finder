@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import func as sa_func
@@ -13,12 +13,14 @@ from app.models.review import Review
 from app.models.user import Role, User
 from app.rate_limit import auth_limiter, get_client_ip
 from app.schemas.auth import (
+    ForgotPasswordRequest,
     LoginRequest,
     MFALoginRequest,
     MFASetupResponse,
     MFAVerifyRequest,
     PhoneLoginRequest,
     PhoneRegisterRequest,
+    ResetPasswordRequest,
     Token,
     UserCreate,
     UserOut,
@@ -26,16 +28,19 @@ from app.schemas.auth import (
     UserUpdate,
 )
 from app.services.captcha import verify_turnstile_token
+from app.services.email import send_password_reset_email
 from app.services.firebase_auth import verify_firebase_id_token
 from app.utils.security import (
     create_access_token,
     create_mfa_token,
+    create_password_reset_token,
     decode_mfa_token,
     dummy_verify_password,
     generate_totp_secret,
     get_totp_uri,
     hash_password,
     verify_password,
+    verify_password_reset_token,
     verify_totp_code,
 )
 
@@ -448,3 +453,70 @@ def user_stats(
         member_since=current_user.created_at,
         role=current_user.role,
     )
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Initiate a password reset flow. Sends an email with a secure token link if the account exists."""
+    client_ip = get_client_ip(request)
+
+    # 1. Rate Limiting Check
+    if auth_limiter.is_locked(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many password reset requests. Please try again in 15 minutes.",
+        )
+
+    # 2. CAPTCHA Verification (if enabled)
+    if not verify_turnstile_token(data.captcha_token, client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Bot verification failed. Please refresh and try again.",
+        )
+
+    # 3. Lookup user
+    user = db.query(User).filter(User.email == data.email.lower()).first()
+    if user and user.is_active:
+        token = create_password_reset_token(user.email)
+        background_tasks.add_task(send_password_reset_email, user.email, token, user.name)
+
+    auth_limiter.record_failure(client_ip)  # Mild rate-limiting counter
+
+    # Always return a generic success message to prevent user enumeration
+    return {
+        "message": "If an account exists with that email, we have sent instructions to reset your password.",
+    }
+
+
+@router.post("/reset-password")
+def reset_password(
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """Complete a password reset by providing the signed token and a new password."""
+    email = verify_password_reset_token(data.token)
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link is invalid or has expired. Please request a new one.",
+        )
+
+    user = db.query(User).filter(User.email == email.lower()).first()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User account not found or deactivated.",
+        )
+
+    user.password_hash = hash_password(data.new_password)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    db.commit()
+
+    return {"message": "Your password has been successfully reset. You can now log in."}
+

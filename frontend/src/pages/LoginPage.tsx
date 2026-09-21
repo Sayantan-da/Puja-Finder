@@ -240,9 +240,17 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="group">
-                <label className="text-sm text-stone-700 block mb-1.5 font-semibold">
-                  Password
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm text-stone-700 font-semibold">
+                    Password
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-semibold text-amber-700 hover:text-amber-800 transition hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-sm">
                     🔑

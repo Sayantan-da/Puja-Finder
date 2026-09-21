@@ -84,3 +84,16 @@ class MFAVerifyRequest(BaseModel):
     code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
     current_password: str | None = None
 
+
+class ForgotPasswordRequest(BaseModel):
+    """Payload to initiate password reset via email."""
+    email: EmailStr
+    captcha_token: str | None = None
+
+
+class ResetPasswordRequest(BaseModel):
+    """Payload to finalize password reset using signed token."""
+    token: str
+    new_password: str = Field(min_length=6, max_length=128)
+
+

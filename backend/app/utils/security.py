@@ -93,3 +93,24 @@ def verify_totp_code(secret: str, code: str, valid_window: int = 1) -> bool:
     totp = pyotp.TOTP(secret)
     return totp.verify(code, valid_window=valid_window)
 
+
+# ---------- Password Reset Tokens ----------
+
+def create_password_reset_token(email: str) -> str:
+    """Create a temporary, signed token for password reset."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.password_reset_token_expire_minutes)
+    payload = {"sub": email.lower(), "scope": "password_reset", "exp": expire}
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+
+def verify_password_reset_token(token: str) -> str | None:
+    """Validate password reset token and return user email or None."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        if payload.get("scope") != "password_reset":
+            return None
+        return payload.get("sub")
+    except JWTError:
+        return None
+
+
