@@ -20,15 +20,18 @@ import RegisterPage from './pages/RegisterPage'
 import RoutePlannerPage from './pages/RoutePlannerPage'
 import TransitHubPage from './pages/TransitHubPage'
 import GroupTripPage from './pages/GroupTripPage'
+import { ToastProvider } from './components/common/ToastContext'
+import ToastContainer from './components/common/ToastContainer'
 
 export default function App() {
   const location = useLocation()
   const isAdminRoute = location.pathname.startsWith('/admin')
 
   return (
-    <div className="min-h-screen flex flex-col text-stone-900 bg-[#FFFDF9] selection:bg-red-500 selection:text-white">
-      {!isAdminRoute && <Navbar />}
-      <div className="flex-1 pb-16 sm:pb-0">
+    <ToastProvider>
+      <div className="min-h-screen flex flex-col text-stone-900 bg-[#FFFDF9] selection:bg-red-500 selection:text-white">
+        {!isAdminRoute && <Navbar />}
+        <div className="flex-1 pb-16 sm:pb-0">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/planner" element={<RoutePlannerPage />} />
@@ -61,6 +64,8 @@ export default function App() {
         </Routes>
       </div>
       {!isAdminRoute && <BottomNav />}
+      <ToastContainer />
     </div>
+    </ToastProvider>
   )
 }

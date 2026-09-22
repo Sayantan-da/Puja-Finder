@@ -377,3 +377,113 @@ body {
   background: rgba(211, 16, 39, 0.15);
   color: #B91C1C;
 }
+
+/* ──── Celestial Agomoni & Lightning Keyframes ──── */
+@keyframes lightningFlashOne {
+  0%, 92%, 100% {
+    opacity: 0;
+  }
+  93% {
+    opacity: 0.75;
+  }
+  94% {
+    opacity: 0.15;
+  }
+  95% {
+    opacity: 0.95;
+  }
+  97% {
+    opacity: 0.3;
+  }
+  98% {
+    opacity: 0;
+  }
+}
+
+@keyframes lightningFlashTwo {
+  0%, 86%, 100% {
+    opacity: 0;
+  }
+  87% {
+    opacity: 0.6;
+  }
+  88% {
+    opacity: 0.1;
+  }
+  89% {
+    opacity: 0.85;
+  }
+  91% {
+    opacity: 0.2;
+  }
+  92% {
+    opacity: 0;
+  }
+}
+
+@keyframes divineAuraPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.45;
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.5));
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.75;
+    filter: drop-shadow(0 0 35px rgba(251, 191, 36, 0.85));
+  }
+}
+
+@keyframes chariotMotionPulse {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-lightning-1 {
+  animation: lightningFlashOne 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-lightning-2 {
+  animation: lightningFlashTwo 9.5s cubic-bezier(0.4, 0, 0.2, 1) infinite 3.5s;
+}
+
+.animate-divine-aura {
+  animation: divineAuraPulse 4.5s ease-in-out infinite;
+}
+
+.animate-chariot-float {
+  animation: chariotMotionPulse 5s ease-in-out infinite;
+}
+
+/* ──── Celestial Glassmorphism & Shimmer ──── */
+.glass-celestial {
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-celestial-subtle {
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.shimmer-wave {
+  background: linear-gradient(
+    90deg,
+    rgba(243, 244, 246, 0.8) 0%,
+    rgba(254, 226, 226, 0.9) 30%,
+    rgba(254, 243, 199, 0.9) 50%,
+    rgba(243, 244, 246, 0.8) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+

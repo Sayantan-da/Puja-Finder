@@ -4,11 +4,32 @@ import { api } from '../api/client'
 import ExactAge from '../components/ExactAge'
 import LiveBadge from '../components/LiveBadge'
 import PandalCard from '../components/PandalCard'
+import AgomoniHero from '../components/home/AgomoniHero'
+import PandalCardSkeleton from '../components/skeletons/PandalCardSkeleton'
 import { useLiveCrowd } from '../hooks/useLiveCrowd'
 import type { Pandal } from '../types'
 import { goNearMe } from '../utils/geo'
 
 type SortKey = 'distance' | 'crowd' | 'rating' | 'name'
+type ZoneKey = 'ALL' | 'NORTH' | 'SOUTH' | 'EAST' | 'CENTRAL' | 'HOWRAH'
+
+const ZONE_CONFIG: { id: ZoneKey; label: string; icon: string }[] = [
+  { id: 'ALL', label: 'All Zones', icon: '🌟' },
+  { id: 'NORTH', label: 'North Heritage', icon: '🏛️' },
+  { id: 'SOUTH', label: 'South Kolkata', icon: '🎨' },
+  { id: 'EAST', label: 'Salt Lake & East', icon: '🌆' },
+  { id: 'CENTRAL', label: 'Central Kolkata', icon: '🏮' },
+  { id: 'HOWRAH', label: 'Howrah', icon: '🌉' },
+]
+
+const ZONE_KEYWORDS: Record<ZoneKey, string[]> = {
+  ALL: [],
+  NORTH: ['north', 'bagbazar', 'sovabazar', 'kumartuli', 'hatibagan', 'ahiritola', 'tala', 'shyambazar', 'kashi bose', 'simla', 'girish'],
+  SOUTH: ['south', 'ballygunge', 'gariahath', 'gariahat', 'ekdalia', 'deshapriya', 'jodhpur', 'behala', 'mudiali', 'shiv mandir', 'suruchi', 'chetla', 'maddox', 'alipore', 'naktala', 'hazra'],
+  EAST: ['salt lake', 'newtown', 'new town', 'lake town', 'sreebhumi', 'ultadanga', 'kankurgachi', 'dum dum', 'rajarhat', 'bidhannagar', 'fd block'],
+  CENTRAL: ['central', 'college square', 'md ali', 'bowbazar', 'santosh mitra', 'sealdah', 'esplanade', 'chandni', 'chittaranjan', 'burrabazar'],
+  HOWRAH: ['howrah', 'shibpur', 'salkia', 'bally', 'belur'],
+}
 
 const CROWD_ORDER: Record<string, number> = { LOW: 0, MODERATE: 1, HIGH: 2 }
 
@@ -25,6 +46,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [sort, setSort] = useState<SortKey>('name')
+  const [selectedZone, setSelectedZone] = useState<ZoneKey>('ALL')
   const [openOnly, setOpenOnly] = useState(false)
   const [coolingOnly, setCoolingOnly] = useState(false)
   const [seniorOnly, setSeniorOnly] = useState(false)
@@ -185,6 +207,14 @@ export default function HomePage() {
       list = list.filter((p) => p.barricade_distance === 'DIRECT')
     }
 
+    if (selectedZone !== 'ALL') {
+      const kws = ZONE_KEYWORDS[selectedZone]
+      list = list.filter((p) => {
+        const text = `${p.locality || ''} ${p.address || ''} ${p.name || ''}`.toLowerCase()
+        return kws.some((kw) => text.includes(kw))
+      })
+    }
+
     switch (sort) {
       case 'distance':
         return list.sort((a, b) => (a.distance_km ?? 999) - (b.distance_km ?? 999))
@@ -200,7 +230,7 @@ export default function HomePage() {
       default:
         return list.sort((a, b) => a.name.localeCompare(b.name))
     }
-  }, [pandals, sort, openOnly, coolingOnly, seniorOnly, directOnly])
+  }, [pandals, sort, selectedZone, openOnly, coolingOnly, seniorOnly, directOnly])
 
   const chip = (activeState: boolean) =>
     `text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 cursor-pointer font-semibold ${
@@ -224,160 +254,16 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── HERO SECTION: MULTI-LAYERED MAA DURGA PRESENTATION ── */}
-      <section
-        className="relative rounded-3xl overflow-hidden mb-8 border border-red-200 shadow-xl bg-gradient-to-b from-[#FFFFFF] via-[#FFF8F6] to-[#FFF1EF]"
-        style={{
-          boxShadow: '0 10px 40px rgba(211, 16, 39, 0.08), 0 1px 3px rgba(0,0,0,0.05)',
-        }}
-      >
-        {/* Layer 0: Traditional Red & Golden Border Frame Accent */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-red-600 via-amber-400 to-red-600" />
-
-        {/* Layer 1: Background Atmospheric Mandala & Floating Kash Phool */}
-        <div
-          className="absolute -right-20 -top-20 w-96 h-96 rounded-full opacity-20 pointer-events-none animate-halo-rotate"
-          style={{
-            background: 'radial-gradient(circle, #D31027 0%, #F59E0B 40%, transparent 70%)',
-            filter: 'blur(30px)',
-          }}
-        />
-
-        <div className="relative p-6 sm:p-10 z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Content Area: Bengali greetings, Typography & Actions */}
-            <div className="lg:col-span-7 flex flex-col items-start text-left">
-              {/* Bengali Welcome Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-red-100/80 border border-red-300 text-red-800 text-xs font-bangla font-semibold mb-3">
-                <span className="text-sm">🪔</span> আসছে পুজো, বাজছে ঢাক ✦ শুভ শারদীয়া ২০২৬
-              </div>
-
-              {/* Layer 3 Overlay: Bengali Calligraphy Sharodiya Durgotsav Artwork */}
-              <div className="mb-3 max-w-sm">
-                <img
-                  src="/assets/sharodiya-durgotsav-logo.png"
-                  alt="শারদীয় দুর্গোৎসব - Sharodiya Durgotsav"
-                  className="w-56 sm:w-64 h-auto drop-shadow-sm hover:scale-102 transition-transform"
-                />
-              </div>
-
-              <h1
-                className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-stone-900 leading-tight"
-                style={{ fontFamily: "'Cinzel', serif" }}
-              >
-                Kolkata <span className="sindoor-text">Durga Puja</span> Pandal Finder
-              </h1>
-
-              <p className="mt-3 text-stone-600 text-sm sm:text-base leading-relaxed max-w-xl font-medium">
-                Live crowd telemetry, wait times, themes, and curated walking circuits for Kolkata's grandest pandals — from North Kolkata heritage to South Kolkata art spectacles.
-              </p>
-
-              {/* Search & Quick Actions */}
-              <div className="mt-6 flex flex-col sm:flex-row gap-2.5 w-full max-w-xl">
-                <div className="relative flex-1">
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search pandal, locality or theme…"
-                    className="w-full rounded-xl px-4 py-3 bg-white border border-red-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-sm text-sm"
-                  />
-                  {search && (
-                    <button
-                      onClick={() => setSearch('')}
-                      className="absolute right-3 top-3 text-xs text-stone-400 hover:text-stone-600"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => goNearMe(navigate)}
-                  className="rounded-xl font-bold px-5 py-3 text-center transition-all text-white flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg hover:brightness-105 shrink-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #D31027 0%, #B91C1C 100%)',
-                  }}
-                >
-                  📍 Near me
-                </button>
-
-                <a
-                  href="/planner"
-                  className="rounded-xl font-bold px-5 py-3 text-center transition-all flex items-center justify-center gap-1.5 text-stone-900 bg-amber-400 hover:bg-amber-300 shadow-md hover:shadow-lg shrink-0"
-                >
-                  🧭 Route Planner
-                </a>
-              </div>
-
-              {/* Bengali Dhak Rhythm Touch */}
-              <div className="mt-4 flex items-center gap-3">
-                <button
-                  onClick={toggleDhakSound}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                    isDhakPlaying
-                      ? 'bg-red-600 text-white border-red-700 animate-bounce shadow-md'
-                      : 'bg-white text-red-700 border-red-300 hover:bg-red-50 shadow-xs'
-                  }`}
-                  title="Click to hear traditional Bengali Dhak beats"
-                >
-                  <span className="text-sm">🥁</span>
-                  {isDhakPlaying ? 'ঢাকের আওয়াজ বাজছে… (থামাতে ক্লিক করুন)' : 'ঢাকের আওয়াজ শুনুন (Play Dhak Beats)'}
-                </button>
-                <span className="text-xs text-stone-500 italic hidden sm:inline">
-                  ধাং কুড় কুড় ধাং কুড় কুড় ✦
-                </span>
-              </div>
-            </div>
-
-            {/* Right Layer: Multi-Layered Maa Durga Composition */}
-            <div className="lg:col-span-5 relative flex items-center justify-center min-h-[320px] sm:min-h-[380px]">
-              {/* LAYER 1: The Divine Glowing Circular Mandala & Pratima Portal */}
-              <div className="relative w-64 h-64 sm:w-76 sm:h-76 rounded-full p-2 bg-gradient-to-tr from-amber-400 via-red-500 to-amber-300 shadow-2xl animate-float-gentle">
-                <div className="w-full h-full rounded-full overflow-hidden border-4 border-white shadow-inner relative bg-stone-900">
-                  <img
-                    src="/assets/maa-durga-mandala-dhak.jpg"
-                    alt="Maa Durga Divine Face & Halo Mandala"
-                    className="w-full h-full object-cover scale-110"
-                  />
-                  {/* Glowing divine overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-red-900/40 via-transparent to-amber-500/20 mix-blend-overlay pointer-events-none" />
-                </div>
-
-                {/* Floating divine aura pulse rings */}
-                <div className="absolute -inset-3 rounded-full border border-amber-400/40 animate-ping pointer-events-none" style={{ animationDuration: '3s' }} />
-              </div>
-
-              {/* LAYER 4: Foreground Bengali Dhunuchi Dancer Cutout */}
-              <div className="absolute -bottom-6 -right-2 sm:-right-4 w-44 sm:w-56 pointer-events-none z-20">
-                <img
-                  src="/assets/dhunuchi-dancer-cutout.png"
-                  alt="Bengali Dhunuchi Dancer"
-                  className="w-full h-auto drop-shadow-2xl dhunuchi-smoke animate-smoke-drift"
-                />
-              </div>
-
-              {/* LAYER 5: Floating Bengali Celebration Card */}
-              <div
-                className="absolute -top-3 -left-3 sm:left-2 bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-red-200 shadow-lg z-20 flex items-center gap-2.5 max-w-[190px]"
-              >
-                <span className="text-2xl animate-diya-flicker">🪔</span>
-                <div>
-                  <p className="text-[11px] font-black text-red-700 font-bangla leading-none">শুভ দুর্গোৎসব</p>
-                  <p className="text-[10px] text-stone-600 font-semibold mt-0.5">মায়ের আশীর্বাদে কাটুক পুজো</p>
-                </div>
-              </div>
-
-              {/* Autumn Kash Phool & Dhak Plumes Touch */}
-              <div className="absolute bottom-2 left-4 bg-amber-50/90 border border-amber-200 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs flex items-center gap-1 z-20">
-                <span>🌾</span> কাশফুল ও ঢাকের কলতান
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Decorative Alpana Line */}
-        <div className="alpana-divider mx-8" style={{ marginTop: 0, marginBottom: 0 }} />
-      </section>
+      {/* ── HERO SECTION: MAA DURGA AGOMONI (CELESTIAL DESCENT & LIGHTNING) ── */}
+      <AgomoniHero
+        search={search}
+        setSearch={setSearch}
+        pandals={pandals}
+        openOnly={openOnly}
+        setOpenOnly={setOpenOnly}
+        isDhakPlaying={isDhakPlaying}
+        toggleDhakSound={toggleDhakSound}
+      />
 
       {/* ── Featured Curated Trails Promo (Bright White & Red with Archway Art) ── */}
       <section
@@ -466,6 +352,30 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ── Locality / Zone Filter Chips (UX Roadmap Feature) ── */}
+      <div className="mb-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5">
+          <span className="text-xs font-bold text-stone-500 shrink-0 mr-1">Kolkata Zones:</span>
+          {ZONE_CONFIG.map((z) => {
+            const isActive = selectedZone === z.id
+            return (
+              <button
+                key={z.id}
+                onClick={() => setSelectedZone(z.id)}
+                className={`text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 shrink-0 font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                  isActive
+                    ? 'border-amber-500 bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 font-bold shadow-amber-200'
+                    : 'border-red-200 bg-white text-stone-700 hover:border-red-400 hover:bg-red-50/50'
+                }`}
+              >
+                <span>{z.icon}</span>
+                <span>{z.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Sort & filter chips */}
       <div className="flex items-center gap-2 flex-wrap mb-6">
         <span className="text-xs font-bold text-stone-500 mr-1">Sort & Filter:</span>
@@ -499,9 +409,10 @@ export default function HomePage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-16">
-          <div className="text-4xl animate-bounce mb-2">🪔</div>
-          <p className="text-stone-500 font-medium">Loading Kolkata pandals…</p>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <PandalCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
         <>

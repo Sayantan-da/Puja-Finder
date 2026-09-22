@@ -3,6 +3,7 @@ import CrowdBadge from './CrowdBadge'
 import RatingStars from './RatingStars'
 import type { Pandal } from '../types'
 import { formatDistance } from '../utils/format'
+import { useToast } from './common/ToastContext'
 
 export function OpenBadge({ open }: { open: boolean | null }) {
   if (open === null) return null
@@ -46,10 +47,41 @@ const TAG_LABELS: Record<string, { label: string; icon: string }> = {
 }
 
 export default function PandalCard({ pandal }: { pandal: Pandal }) {
+  const { showToast } = useToast()
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const shareUrl = `${window.location.origin}/pandals/${pandal.id}`
+    const shareData = {
+      title: `${pandal.name} - Kolkata PujaFinder`,
+      text: `Check out ${pandal.name} (${pandal.locality || 'Kolkata'}) on PujaFinder! Live crowd info & themes.`,
+      url: shareUrl,
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+        showToast('Shared successfully!', 'success')
+        return
+      } catch (err: unknown) {
+        if ((err as Error)?.name === 'AbortError') return
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      showToast('Pandal link copied to clipboard! 📋', 'success')
+    } catch {
+      showToast('Could not copy link', 'error')
+    }
+  }
+
   return (
     <Link
       to={`/pandals/${pandal.id}`}
-      className="puja-card group block rounded-2xl bg-white border border-red-100 overflow-hidden flex flex-col"
+      className="puja-card group block rounded-2xl bg-white border border-red-100 overflow-hidden flex flex-col relative"
       style={{ boxShadow: '0 4px 18px rgba(211, 16, 39, 0.07)' }}
     >
       {/* Animated top stripe */}
@@ -67,6 +99,19 @@ export default function PandalCard({ pandal }: { pandal: Pandal }) {
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+
+          {/* Quick Share Button */}
+          <button
+            type="button"
+            onClick={handleShare}
+            title="Share pandal with friends"
+            className="absolute top-2.5 left-2.5 z-10 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs text-stone-700 hover:text-red-600 hover:bg-white shadow-md flex items-center justify-center transition-transform active:scale-90 hover:scale-110 cursor-pointer"
+            aria-label="Share pandal"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+          </button>
 
           {/* Trend badges */}
           {pandal.crowd_trend === 'SURGING' && (
